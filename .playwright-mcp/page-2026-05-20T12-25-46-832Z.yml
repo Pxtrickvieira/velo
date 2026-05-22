@@ -1,0 +1,95 @@
+- generic:
+  - generic:
+    - list
+    - region "Notifications alt+T"
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - button:
+              - img
+            - heading [level=1]: Finalizar Pedido
+          - link:
+            - /url: /
+            - img
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - heading [level=2]: Dados Pessoais
+                - generic:
+                  - generic:
+                    - text: Nome
+                    - textbox: João
+                  - generic:
+                    - text: Sobrenome
+                    - textbox: Silva
+                  - generic:
+                    - text: Email
+                    - textbox: cliente@email.com
+                  - generic:
+                    - text: Telefone
+                    - textbox: (11) 98765-4321
+                  - generic:
+                    - text: CPF
+                    - textbox: 123.___.___-__
+                  - generic:
+                    - text: Loja para Retirada
+                    - combobox [expanded]:
+                      - generic: Selecione uma loja
+                      - img
+                    - combobox
+              - generic:
+                - heading [level=2]: Forma de Pagamento
+                - generic:
+                  - button:
+                    - paragraph: À Vista
+                    - paragraph: R$ 40.000,00
+                  - button:
+                    - paragraph: Financiamento
+                    - paragraph: 12x de R$ 3.400,00
+              - generic:
+                - generic:
+                  - checkbox
+                  - checkbox
+                  - generic:
+                    - generic:
+                      - text: Li e aceito os
+                      - link:
+                        - /url: /termos
+                        - text: Termos de Uso
+                      - text: e
+                      - link:
+                        - /url: /privacidade
+                        - text: Política de Privacidade
+              - button: Confirmar Pedido
+          - generic:
+            - generic:
+              - heading [level=2]: Resumo
+              - generic:
+                - img
+              - heading [level=3]: Velô Sprint
+              - list:
+                - listitem:
+                  - generic: Cor
+                  - generic: Midnight Black
+                - listitem:
+                  - generic: Interior
+                  - generic: carbon black
+                - listitem:
+                  - generic: Rodas
+                  - generic: aero Wheels
+              - generic:
+                - generic:
+                  - generic: Total
+                  - generic: R$ 40.000,00
+  - listbox [ref=e72]:
+    - option "Velô Paulista - Av. Paulista, 1000" [active] [ref=e73]:
+      - generic [ref=e75]: Velô Paulista - Av. Paulista, 1000
+    - option "Velô Faria Lima - Av. Faria Lima, 2500" [ref=e76]:
+      - generic [ref=e78]: Velô Faria Lima - Av. Faria Lima, 2500
+    - option "Velô Morumbi - Av. Morumbi, 1500" [ref=e79]:
+      - generic [ref=e81]: Velô Morumbi - Av. Morumbi, 1500
+    - option "Velô Ibirapuera - Av. Ibirapuera, 3000" [ref=e82]:
+      - generic [ref=e84]: Velô Ibirapuera - Av. Ibirapuera, 3000

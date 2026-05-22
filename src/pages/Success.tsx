@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, Navigate, Link } from 'react-router-dom';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Order, formatPrice, ExteriorColor, WheelType } from '@/store/configuratorStore';
@@ -33,6 +33,48 @@ const colorLabels: Record<ExteriorColor, string> = {
   'midnight-black': 'Midnight Black',
 };
 
+type OrderStatus = Order['status'];
+
+const STATUS_FEEDBACK: Record<
+  OrderStatus,
+  {
+    heading: string;
+    message: string;
+    Icon: typeof CheckCircle;
+    iconWrapperClass: string;
+    iconClass: string;
+    headingClass: string;
+  }
+> = {
+  APROVADO: {
+    heading: 'Pedido Aprovado!',
+    message:
+      'Seu pedido foi processado com sucesso. Em breve entraremos em contato.',
+    Icon: CheckCircle,
+    iconWrapperClass: 'bg-success/10',
+    iconClass: 'text-success',
+    headingClass: 'text-success',
+  },
+  EM_ANALISE: {
+    heading: 'Pedido em Análise',
+    message:
+      'Seu pedido foi registrado e está em análise de crédito. Entraremos em contato em breve com o resultado.',
+    Icon: Clock,
+    iconWrapperClass: 'bg-amber-100',
+    iconClass: 'text-amber-700',
+    headingClass: 'text-amber-700',
+  },
+  REPROVADO: {
+    heading: 'Crédito Reprovado',
+    message:
+      'Infelizmente seu crédito não foi aprovado. Tente novamente com pagamento à vista.',
+    Icon: XCircle,
+    iconWrapperClass: 'bg-destructive/10',
+    iconClass: 'text-destructive',
+    headingClass: 'text-destructive',
+  },
+};
+
 const Success = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -42,7 +84,8 @@ const Success = () => {
     return <Navigate to="/" replace />;
   }
 
-  const isApproved = order.status === 'APROVADO';
+  const feedback = STATUS_FEEDBACK[order.status];
+  const { Icon } = feedback;
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -54,15 +97,15 @@ const Success = () => {
       <div className="w-full max-w-2xl bg-card rounded-lg shadow-elegant-lg p-8 animate-scale-in">
         {/* Status Icon */}
         <div className="flex justify-center mb-6">
-          {isApproved ? (
-            <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center">
-              <CheckCircle className="w-12 h-12 text-success" />
-            </div>
-          ) : (
-            <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
-              <XCircle className="w-12 h-12 text-destructive" />
-            </div>
-          )}
+          <div
+            data-testid="success-status-icon"
+            className={cn(
+              'w-20 h-20 rounded-full flex items-center justify-center',
+              feedback.iconWrapperClass
+            )}
+          >
+            <Icon className={cn('w-12 h-12', feedback.iconClass)} />
+          </div>
         </div>
 
         {/* Status Message */}
@@ -71,15 +114,13 @@ const Success = () => {
             data-testid="success-status"
             className={cn(
               'font-display text-3xl font-bold mb-2',
-              isApproved ? 'text-success' : 'text-destructive'
+              feedback.headingClass
             )}
           >
-            {isApproved ? 'Pedido Aprovado!' : 'Crédito Reprovado'}
+            {feedback.heading}
           </h1>
-          <p className="text-muted-foreground">
-            {isApproved
-              ? 'Seu pedido foi processado com sucesso. Em breve entraremos em contato.'
-              : 'Infelizmente seu crédito não foi aprovado. Tente novamente com pagamento à vista.'}
+          <p className="text-muted-foreground" data-testid="success-status-message">
+            {feedback.message}
           </p>
         </div>
 

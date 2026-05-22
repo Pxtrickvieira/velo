@@ -1,0 +1,80 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - button [ref=e7] [cursor=pointer]:
+            - img [ref=e8]
+          - heading "Finalizar Pedido" [level=1] [ref=e10]
+        - link "Velô" [ref=e11] [cursor=pointer]:
+          - /url: /
+          - img "Velô" [ref=e12]
+    - main [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - heading "Dados Pessoais" [level=2] [ref=e18]
+            - generic [ref=e19]:
+              - generic [ref=e20]:
+                - text: Nome
+                - textbox "Nome" [ref=e21]: João
+              - generic [ref=e22]:
+                - text: Sobrenome
+                - textbox "Sobrenome" [ref=e23]: Silva
+              - generic [ref=e24]:
+                - text: Email
+                - textbox "Email" [ref=e25]: cliente@email.com
+              - generic [ref=e26]:
+                - text: Telefone
+                - textbox "Telefone" [ref=e27]: (11) 98765-4321
+              - generic [ref=e28]:
+                - text: CPF
+                - textbox "CPF" [ref=e29]: 123.___.___-__
+              - generic [ref=e30]:
+                - text: Loja para Retirada
+                - combobox "Loja para Retirada" [ref=e31] [cursor=pointer]:
+                  - generic: Velô Paulista - Av. Paulista, 1000
+                  - img [ref=e32]
+                - combobox [ref=e34]
+          - generic [ref=e35]:
+            - heading "Forma de Pagamento" [level=2] [ref=e36]
+            - generic [ref=e37]:
+              - button "À Vista R$ 40.000,00" [ref=e38] [cursor=pointer]:
+                - paragraph [ref=e39]: À Vista
+                - paragraph [ref=e40]: R$ 40.000,00
+              - button "Financiamento 12x de R$ 3.400,00" [ref=e41] [cursor=pointer]:
+                - paragraph [ref=e42]: Financiamento
+                - paragraph [ref=e43]: 12x de R$ 3.400,00
+          - generic [ref=e45]:
+            - checkbox "Li e aceito os Termos de Uso e Política de Privacidade" [ref=e46] [cursor=pointer]
+            - checkbox
+            - generic [ref=e47]:
+              - generic [ref=e48] [cursor=pointer]:
+                - text: Li e aceito os
+                - link "Termos de Uso" [ref=e49]:
+                  - /url: /termos
+                - text: e
+                - link "Política de Privacidade" [ref=e50]:
+                  - /url: /privacidade
+              - paragraph [ref=e85]: Aceite os termos
+          - button "Confirmar Pedido" [active] [ref=e51] [cursor=pointer]
+        - generic [ref=e53]:
+          - heading "Resumo" [level=2] [ref=e54]
+          - img "Velô Sprint" [ref=e56]
+          - heading "Velô Sprint" [level=3] [ref=e57]
+          - list [ref=e58]:
+            - listitem [ref=e59]:
+              - generic [ref=e60]: Cor
+              - generic [ref=e61]: Midnight Black
+            - listitem [ref=e62]:
+              - generic [ref=e63]: Interior
+              - generic [ref=e64]: carbon black
+            - listitem [ref=e65]:
+              - generic [ref=e66]: Rodas
+              - generic [ref=e67]: aero Wheels
+          - generic [ref=e69]:
+            - generic [ref=e70]: Total
+            - generic [ref=e71]: R$ 40.000,00
