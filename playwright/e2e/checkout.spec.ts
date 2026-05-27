@@ -1,55 +1,35 @@
 import { test, expect } from '../support/fixtures'
-import {
-  getFinancedSummaryTotal,
-  type CheckoutFormData,
-} from '../support/actions/checkoutActions'
-import {
-  E2E_CHECKOUT_CPF,
-  E2E_CHECKOUT_MARKERS,
-} from '../support/database/checkoutTestCleanup'
+import { getFinancedSummaryTotal, type CheckoutFormData } from '../support/actions/checkoutActions'
+import { E2E_CHECKOUT_CPF, E2E_CHECKOUT_MARKERS, } from '../support/database/checkoutTestCleanup'
 import { getOrderStatusByNumber } from '../support/database/orderRepository'
+import { CHECKOUT_DATA } from '../support/data/checkoutData'
 
-/** Score 600 no mock da edge function `credit-analysis` (faixa 501–700, CT07). */
 const MEDIUM_SCORE_CPF = E2E_CHECKOUT_MARKERS.cpfMediumScore
 
-const CHECKOUT_DATA = {
-  basePrice: 'R$ 40.000,00',
 
-  customer: {
-    name: 'Maria',
-    lastname: 'Oliveira',
-    email: E2E_CHECKOUT_MARKERS.email,
-    phone: '(11) 97654-3210',
-    document: E2E_CHECKOUT_CPF,
-    store: 'Velô Paulista - Av. Paulista, 1000',
-    terms: true,
-  } satisfies Required<CheckoutFormData>,
+const createCheckoutCustomer = (
+  overrides: Partial<CheckoutFormData> = {}
+): Required<CheckoutFormData> => ({
+  ...CHECKOUT_DATA.customer,
 
-  success: {
-    approved: {
-      statusHeading: 'Pedido Aprovado!',
-      statusMessage:
-        'Seu pedido foi processado com sucesso. Em breve entraremos em contato.',
-      statusIcon: 'check' as const,
-      orderNumberPattern: /^VLO-[A-Z0-9]{6}$/,
-    },
-    inAnalysis: {
-      statusHeading: 'Pedido em Análise',
-      statusMessage:
-        'Seu pedido foi registrado e está em análise de crédito. Entraremos em contato em breve com o resultado.',
-      statusIcon: 'clock' as const,
-      orderNumberPattern: /^VLO-[A-Z0-9]{6}$/,
-    },
-  },
-} as const
+  email: `e2e.checkout+${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2)}@velo.test`,
+
+  ...overrides,
+})
 
 test.describe('Checkout', () => {
+
   test.describe('Validações de campos obrigatórios', () => {
+    
     test.beforeEach(async ({ app }) => {
       await app.checkout.openFromConfigurator()
     })
 
-    test('deve rejeitar envio com campos obrigatórios vazios', async ({ app }) => {
+    test('deve rejeitar envio com campos obrigatórios vazios', async ({
+      app,
+    }) => {
       await app.checkout.submitOrder()
 
       await app.checkout.expectStayOnCheckout()
@@ -60,6 +40,7 @@ test.describe('Checkout', () => {
       app,
     }) => {
       await app.checkout.fillValidForm()
+
       await app.checkout.fillForm({
         name: 'A',
         lastname: 'B',
@@ -68,10 +49,12 @@ test.describe('Checkout', () => {
       await app.checkout.submitOrder()
 
       await app.checkout.expectStayOnCheckout()
+
       await app.checkout.expectFieldError(
         'name',
         'Nome deve ter pelo menos 2 caracteres'
       )
+
       await app.checkout.expectFieldError(
         'lastname',
         'Sobrenome deve ter pelo menos 2 caracteres'
@@ -86,17 +69,26 @@ test.describe('Checkout', () => {
       await app.checkout.submitOrder()
 
       await app.checkout.expectStayOnCheckout()
-      await app.checkout.expectFieldError('email', 'Email inválido')
+
+      await app.checkout.expectFieldError(
+        'email',
+        'Email inválido'
+      )
     })
 
     test('deve rejeitar CPF incompleto ou inválido', async ({ app }) => {
       await app.checkout.fillValidForm()
+
       await app.checkout.elements.documentInput.clear()
 
       await app.checkout.submitOrder()
 
       await app.checkout.expectStayOnCheckout()
-      await app.checkout.expectFieldError('document', 'CPF inválido')
+
+      await app.checkout.expectFieldError(
+        'document',
+        'CPF inválido'
+      )
     })
 
     test('deve exigir aceite dos termos para concluir o pedido', async ({
@@ -109,65 +101,99 @@ test.describe('Checkout', () => {
       await app.checkout.submitOrder()
 
       await app.checkout.expectStayOnCheckout()
-      await app.checkout.expectFieldError('terms', 'Aceite os termos')
+
+      await app.checkout.expectFieldError(
+        'terms',
+        'Aceite os termos'
+      )
     })
   })
 
   test.describe('Pagamento e Confirmação', () => {
     test.beforeEach(async ({ app, checkoutTestCleanup: _cleanup }) => {
       await app.checkout.openFromConfigurator()
-      await app.checkout.validateSummaryTotalPrice(CHECKOUT_DATA.basePrice)
+
+      await app.checkout.validateSummaryTotalPrice(
+        CHECKOUT_DATA.basePrice
+      )
     })
 
     test('deve concluir pedido à vista com pagamento aprovado', async ({
       app,
       checkoutTestCleanup,
     }) => {
-      const { customer, basePrice, success } = CHECKOUT_DATA
+      const customer = createCheckoutCustomer()
+
+      const { basePrice, success } = CHECKOUT_DATA
 
       await app.checkout.fillForm(customer)
+
       await app.checkout.expectFormWithoutErrors()
 
       await app.checkout.selectCashPayment()
-      await app.checkout.expectCashPaymentTotals(basePrice)
+
+      await app.checkout.expectCashPaymentTotals(
+        basePrice
+      )
 
       await app.checkout.submitOrderAndWaitForSuccess()
 
-      const orderNumber = await app.checkout.getSuccessOrderNumber()
+      const orderNumber =
+        await app.checkout.getSuccessOrderNumber()
+
       checkoutTestCleanup.registerOrderNumber(orderNumber)
 
       await app.checkout.expectSuccessPage({
         ...success.approved,
+
         totalPrice: basePrice,
+
         customerName: `${customer.name} ${customer.lastname}`,
+
         customerEmail: customer.email,
+
         store: customer.store,
       })
     })
 
-    test('deve aprovar automaticamente o crédito quando o score do CPF for maior que 700 no financiamento', async ({app, checkoutTestCleanup}) => {
-      const { customer, basePrice, success } = CHECKOUT_DATA
-
-      await app.checkout.fillForm({
-        ...customer,
+    test('deve aprovar automaticamente o crédito quando o score do CPF for maior que 700 no financiamento', async ({
+      app,
+      checkoutTestCleanup,
+    }) => {
+      const customer = createCheckoutCustomer({
         document: E2E_CHECKOUT_MARKERS.cpfHighScore,
       })
+
+      const { basePrice, success } = CHECKOUT_DATA
+
+      await app.checkout.fillForm(customer)
+
       await app.checkout.expectFormWithoutErrors()
 
       await app.checkout.selectFinancedPayment()
+
       await app.checkout.setEntryValue(0)
-      await app.checkout.expectFinancedPaymentTotals(basePrice)
+
+      await app.checkout.expectFinancedPaymentTotals(
+        basePrice
+      )
 
       await app.checkout.submitOrderAndWaitForSuccess()
 
-      const orderNumber = await app.checkout.getSuccessOrderNumber()
+      const orderNumber =
+        await app.checkout.getSuccessOrderNumber()
+
       checkoutTestCleanup.registerOrderNumber(orderNumber)
 
       await app.checkout.expectSuccessPage({
         ...success.approved,
+
         totalPrice: getFinancedSummaryTotal(basePrice),
+
         customerName: `${customer.name} ${customer.lastname}`,
+
         customerEmail: customer.email,
+
         store: customer.store,
       })
 
@@ -180,28 +206,40 @@ test.describe('Checkout', () => {
       app,
       checkoutTestCleanup,
     }) => {
-      const { customer, basePrice, success } = CHECKOUT_DATA
-
-      await app.checkout.fillForm({
-        ...customer,
+      const customer = createCheckoutCustomer({
         document: MEDIUM_SCORE_CPF,
       })
+
+      const { basePrice, success } = CHECKOUT_DATA
+
+      await app.checkout.fillForm(customer)
+
       await app.checkout.expectFormWithoutErrors()
 
       await app.checkout.selectFinancedPayment()
+
       await app.checkout.setEntryValue(0)
-      await app.checkout.expectFinancedPaymentTotals(basePrice)
+
+      await app.checkout.expectFinancedPaymentTotals(
+        basePrice
+      )
 
       await app.checkout.submitOrderAndWaitForSuccess()
 
-      const orderNumber = await app.checkout.getSuccessOrderNumber()
+      const orderNumber =
+        await app.checkout.getSuccessOrderNumber()
+
       checkoutTestCleanup.registerOrderNumber(orderNumber)
 
       await app.checkout.expectSuccessPage({
         ...success.inAnalysis,
+
         totalPrice: getFinancedSummaryTotal(basePrice),
+
         customerName: `${customer.name} ${customer.lastname}`,
+
         customerEmail: customer.email,
+
         store: customer.store,
       })
 
@@ -210,8 +248,196 @@ test.describe('Checkout', () => {
         .toBe('EM_ANALISE')
 
       await app.checkout.openOrderLookupFromSuccess()
+
       await app.orderLookup.searchOrder(orderNumber)
-      await app.orderLookup.validateStatusBadge('EM_ANALISE')
+
+      await app.orderLookup.validateStatusBadge(
+        'EM_ANALISE'
+      )
     })
+
+    test('deve reprovar automaticamente o crédito quando o score do CPF for menor ou igual a 500 no financiamento sem entrada', async ({
+      app,
+      checkoutTestCleanup,
+    }) => {
+      const customer = createCheckoutCustomer({
+        document: E2E_CHECKOUT_MARKERS.cpfLowScore,
+      })
+
+      const { basePrice, success } = CHECKOUT_DATA
+
+      await app.checkout.fillForm(customer)
+
+      await app.checkout.expectFormWithoutErrors()
+
+      await app.checkout.selectFinancedPayment()
+
+      await app.checkout.setEntryValue(0)
+
+      await app.checkout.expectFinancedPaymentTotals(
+        basePrice
+      )
+
+      await app.checkout.submitOrderAndWaitForSuccess()
+
+      const orderNumber =
+        await app.checkout.getSuccessOrderNumber()
+
+      checkoutTestCleanup.registerOrderNumber(orderNumber)
+
+      await app.checkout.expectSuccessPage({
+        ...success.reproved,
+
+        totalPrice: getFinancedSummaryTotal(basePrice),
+
+        customerName: `${customer.name} ${customer.lastname}`,
+
+        customerEmail: customer.email,
+
+        store: customer.store,
+      })
+
+      await expect
+        .poll(() => getOrderStatusByNumber(orderNumber))
+        .toBe('REPROVADO')
+    })
+
+    test('deve reprovar automaticamente o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada menor que 50%', async ({
+      app,
+      checkoutTestCleanup,
+    }) => {
+      const customer = createCheckoutCustomer({
+        document: E2E_CHECKOUT_MARKERS.cpfLowScore,
+      })
+    
+      const { success } = CHECKOUT_DATA
+    
+      await app.checkout.fillForm(customer)
+    
+      await app.checkout.expectFormWithoutErrors()
+    
+      await app.checkout.selectFinancedPayment()
+    
+      await app.checkout.setEntryValue(10000)
+    
+      await app.checkout.expectFinancedPaymentTotals(
+        'R$ 30.000,00'
+      )
+    
+      await app.checkout.submitOrderAndWaitForSuccess()
+    
+      const orderNumber =
+        await app.checkout.getSuccessOrderNumber()
+    
+      checkoutTestCleanup.registerOrderNumber(orderNumber)
+    
+      await app.checkout.expectSuccessPage({
+        ...success.reproved,
+    
+        totalPrice: 'R$ 40.600,00',
+    
+        customerName: `${customer.name} ${customer.lastname}`,
+    
+        customerEmail: customer.email,
+    
+        store: customer.store,
+      })
+    
+      await expect
+        .poll(() => getOrderStatusByNumber(orderNumber))
+        .toBe('REPROVADO')
+    })
+
+    test('deve aprovar automaticamente o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada maior  que 50%', async ({
+      app,
+      checkoutTestCleanup,
+    }) => {
+      const customer = createCheckoutCustomer({
+        document: E2E_CHECKOUT_MARKERS.cpfLowScore,
+      })
+    
+      const { success } = CHECKOUT_DATA
+    
+      await app.checkout.fillForm(customer)
+    
+      await app.checkout.expectFormWithoutErrors()
+    
+      await app.checkout.selectFinancedPayment()
+    
+      await app.checkout.setEntryValue(21000)
+    
+      await app.checkout.expectFinancedPaymentTotals(
+        'R$ 19.000,00'
+      )
+    
+      await app.checkout.submitOrderAndWaitForSuccess()
+    
+      const orderNumber =
+        await app.checkout.getSuccessOrderNumber()
+    
+      checkoutTestCleanup.registerOrderNumber(orderNumber)
+    
+      await app.checkout.expectSuccessPage({
+        ...success.approved,
+    
+        totalPrice: 'R$ 40.380,00',
+    
+        customerName: `${customer.name} ${customer.lastname}`,
+    
+        customerEmail: customer.email,
+    
+        store: customer.store,
+      })
+    
+      await expect
+        .poll(() => getOrderStatusByNumber(orderNumber))
+        .toBe('APROVADO')
+    })
+
+    test('deve aprovar automaticamente o crédito quando o score do CPF for menor ou igual a 500 no financiamento com entrada igual a 50%', async ({
+      app,
+      checkoutTestCleanup,
+    }) => {
+      const customer = createCheckoutCustomer({
+        document: E2E_CHECKOUT_MARKERS.cpfLowScore,
+      })
+    
+      const { success } = CHECKOUT_DATA
+    
+      await app.checkout.fillForm(customer)
+    
+      await app.checkout.expectFormWithoutErrors()
+    
+      await app.checkout.selectFinancedPayment()
+    
+      await app.checkout.setEntryValue(20000)
+    
+      await app.checkout.expectFinancedPaymentTotals(
+        'R$ 20.000,00'
+      )
+    
+      await app.checkout.submitOrderAndWaitForSuccess()
+    
+      const orderNumber =
+        await app.checkout.getSuccessOrderNumber()
+    
+      checkoutTestCleanup.registerOrderNumber(orderNumber)
+    
+      await app.checkout.expectSuccessPage({
+        ...success.approved,
+    
+        totalPrice: 'R$ 40.400,00',
+    
+        customerName: `${customer.name} ${customer.lastname}`,
+    
+        customerEmail: customer.email,
+    
+        store: customer.store,
+      })
+    
+      await expect
+        .poll(() => getOrderStatusByNumber(orderNumber))
+        .toBe('APROVADO')
+    })  
   })
 })
